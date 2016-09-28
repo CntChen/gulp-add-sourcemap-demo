@@ -1,0 +1,19 @@
+{
+  "name": "gulp-add-sourcemap-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "CntChen",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-sourcemap": "^1.0.1",
+    "gulp-uglify": "^2.0.0",
+    "require-dir": "^0.3.0",
+    "run-sequence": "^1.2.2",
+    "webpack": "^1.13.2"
+  }
+}
