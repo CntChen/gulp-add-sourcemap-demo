@@ -1,2 +1,8 @@
 # node
 node_modules/
+
+# webpack
+_tmp/
+
+# dist
+dist/

@@ -22,7 +22,7 @@ function makeWebpackConfig(options) {
     }),
     ];
 
-  if(options.mode != 'webpack'){
+  if(options.mode != 'webpack-normal'){
     plugins.push(new webpack.SourceMapDevToolPlugin({
       filename: '[file].map',
     }));

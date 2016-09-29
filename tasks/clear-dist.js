@@ -23,6 +23,7 @@ config.modeArr.forEach((mode) => {
       };
     }, done);
 
+    // 会在完成后执行done()
     clearFun();
   });
 });

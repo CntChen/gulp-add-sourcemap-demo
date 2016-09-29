@@ -10,6 +10,8 @@ var path = require('path');
 var fs = require('fs');
 var gulp = require('gulp');
 var replace = require('gulp-replace');
+var filelog = require('gulp-filelog');
+
 var config = require('../config');
 
 var webpackResourceReg = /<[\w\-"'=\.\/\s]*data-from-webpack[\w\-"'=\.\/\s]*>/g;
@@ -39,9 +41,8 @@ config.modeArr.forEach((mode) => {
 
     gulp.src(config.htmlGlob)
       .pipe(replace(webpackResourceReg, resourcePathReplacer))
-      .pipe(gulp.dest(destDir));
-
-    done();
+      .pipe(gulp.dest(destDir))
+      .on('end', done);
   });
 });
 
@@ -54,9 +55,8 @@ config.modeArr.forEach((mode) => {
     });
 
     gulp.src(resourceGlobArr)
-      .pipe(gulp.dest(destDir));
-
-    done();
+    .pipe(gulp.dest(destDir))
+    .on('end', done);
   });
 });
 
