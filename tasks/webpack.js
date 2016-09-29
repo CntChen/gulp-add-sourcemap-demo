@@ -1,6 +1,20 @@
 var gulp = require('gulp');
+var webpack = require('webpack');
 
-gulp.task('webpack', (done) => {
+var config = require('../config');
+var makeWebpackConfig = require('../make-webpack.config');
 
-  done();
-});
+config.modeArr.forEach((mode) => {
+  gulp.task(mode + ':' + 'webpack', (done) => {
+    var self = this;
+    webpack(makeWebpackConfig({
+      mode: mode,
+    }), (err, stats) => {
+      if (err) {
+        console.log(err);
+        self.emit('end');
+      }
+      done();
+    });
+  });
+})

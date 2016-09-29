@@ -1,104 +1,80 @@
-var config = require('./config');
 var path = require('path');
 
 var webpack = require('webpack');
-var CleanPlugin = require('clean-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var extractLESS = new ExtractTextPlugin('bundle.css', {
-  allChunks: true,
-});
+var CleanWebpackPlugin = require('clean-webpack-plugin');
+var recursiveReadSync = require('recursive-readdir-sync');
+var ManifestPlugin = require('webpack-manifest-plugin');
 
-var production = process.env.NODE_ENV === 'production';
+var config = require('./config');
 
-var plugins = [
-  new CleanPlugin('builds'),
-  extractLESS,
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'main',
-    children: true,
-    minChunks: 2,
-  }),
-  new HtmlWebpackPlugin({
-    title: 'webpack test',
-    filename: './index.html',
-    template: './src/index.html'
-  })
-];
+function makeWebpackConfig(options) {
+  var plugins = [
+    new CleanWebpackPlugin(path.join(config.webpackDestDir, options.mode), {
+      verbose: false,
+    }),
+    /* css抽成单独文件 */
+    new ExtractTextPlugin('[name].[contenthash:8].css', {
+      allChunks: true
+    }),
+    new ManifestPlugin({
+      fileName: config.manifestName,
+    }),
+    ];
 
-if (production) {
-  plugins = plugins.concat([
-    new webpack.optimize.DedupePlugin(),
-    new webpack.optimize.OccurenceOrderPlugin(),
-    new webpack.optimize.MinChunkSizePlugin({
-      minChunkSize: 51200, // ~50kb
-    }),
-    new webpack.optimize.UglifyJsPlugin({
-      mangle: true,
-      compress: {
-        warnings: false, // Suppress uglification warnings
-      },
-    }),
-    new webpack.DefinePlugin({
-      __SERVER__: !production,
-      __DEVELOPMENT__: !production,
-      __DEVTOOLS__: !production,
-      'process.env': {
-        BABEL_ENV: JSON.stringify(process.env.NODE_ENV),
-      },
-    }),
-  ]);
+  if(options.mode != 'webpack'){
+    plugins.push(new webpack.SourceMapDevToolPlugin({
+      filename: '[file].map',
+    }));
+  }
+
+  var webpackConfig = {
+    entry: genEntryMap(config.webpackEntryDir),
+    output: {
+      publicPath: '/',
+      path: path.join(config.webpackDestDir, options.mode),
+      filename: '[name].[hash:8].js',
+      chunkFilename:'js/[name].[chunkhash:8].chunk.js',
+    },
+    plugins: plugins,
+    module: {
+      loaders: [{
+        test: /\.js$/,
+        loader: 'babel?presets[]=es2015',
+      }, {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract('style', 'css'),
+      }, ]
+    },
+  };
+
+  return webpackConfig;
 }
 
-module.exports = {
-  debug: !production,
-  devtool: production ? false : 'eval',
-  entry: './src',
-  output: {
-    publicPath: '',
-    path: path.join(config.path.dist),
-    filename: production ? '[name]-[hash].js' : '[name].js',
-    chunkFilename: production ? './js/[name]-[chunkhash].js' : './js/[name].js',
-  },
-  plugins: plugins,
-  module: {
-    preLoaders: [
-      /*{
-            test: /\.js$/,
-            loader: 'eslint',
-          }*/
-    ],
-    loaders: [{
-      test: /\.js$/,
-      include: /src/,
-      loader: 'babel-loader',
-    }, {
-      test: /\.less$/,
-      loader: extractLESS.extract('style', 'css!less'),
-    }, {
-      test: /\.html$/,
-      loader: 'html',
-    }, {
-      test: /\.(png|gif|jpe?g|svg)$/i,
-      loader: 'url',
-      query: {
-        limit: 10000,
-        name: './images/[name].[ext]',
-      },
-    }],
-    postLoaders: [],
-  },
-  devServer: production ? {} : {
-    port: 8080,
-    contentBase: 'builds',
-    hot: true,
-    historyApiFallback: true,
-    publicPath: "",
-    stats: {
-      colors: true
-    },
-    plugins: [
-      new webpack.HotModuleReplacementPlugin()
-    ]
-  }
-};
+/**
+ * 生成entry map
+ * @param  {string} entryDir
+ * @return {object}
+ */
+function genEntryMap(entryDir) {
+  var entryMap = {};
+
+  var allFilePaths = recursiveReadSync(path.join(__dirname, entryDir));
+  allFilePaths.forEach(function(filePath) {
+    var match = filePath.match(new RegExp(path.basename(entryDir) + '([\\w\\W]*)\\.js$'));
+    var entryName = match ? match[1] : '';
+
+    if (entryName) {
+      if (entryMap[entryName]) {
+        throw new Error('entry命名同名冲突, 请重新命名\n' + filePath);
+      } else {
+        entryMap[entryName] = [filePath];
+      }
+    }
+  });
+
+  return entryMap;
+}
+
+
+module.exports = makeWebpackConfig;

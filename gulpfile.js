@@ -13,10 +13,18 @@ gulp.task('default', (done) => {
   done();
 });
 
-gulp.task('test-webpack-sourcemap', (done) => {
-  runSequence('clear-dist', 'webpack', done);
+gulp.task('webpack-normal:test', (done) => {
+  runSequence('webpack-normal:clear-dist', 'webpack-normal:webpack', 'webpack-normal:dist', done);
 });
 
-gulp.task('test-uglify-sourcemap', (done) => {
-  runSequence('clear-dist', 'webpack', 'uglify', done);
+gulp.task('webpack-sourcemap:test', (done) => {
+  runSequence('webpack-sourcemap:clear-dist', 'webpack-sourcemap:webpack', 'webpack-sourcemap:dist', done);
+});
+
+gulp.task('uglify-sourcemap:test', (done) => {
+  runSequence('uglify-sourcemap:clear-dist', 'uglify-sourcemap:webpack', 'uglify-sourcemap:dist', 'uglify', done);
+});
+
+gulp.task('test', (done) => {
+  runSequence('clear-dist', 'webpack-normal:test', 'webpack-sourcemap:test', 'uglify-sourcemap:test', done);
 });
